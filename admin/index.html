@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Dashboard Admin untuk monitoring performa server, audit user, dan sistem administrasi." />
+  <title>Dashboard Admin | KuhyaKuya</title>
+  <link rel="icon" type="image/svg+xml" href="/img/favicon_v2.svg">
+  <link rel="apple-touch-icon" href="/img/favicon_v2.svg">
+  <link rel="stylesheet" href="../assets/css/theme.css">
+  <link rel="stylesheet" href="../assets/css/theme-custom.css">
+  <style>
+    :root {
+      --bg: var(--site-bg);
+      --bg-soft: var(--site-bg-soft);
+      --surface: var(--site-surface);
+      --accent: var(--site-accent);
+      --text: var(--site-text);
+      --muted: var(--site-muted);
+      --border: var(--site-border);
+      --success: #3ddc97;
+      --warn: #f5c26b;
+      --danger: #f87171;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at top, var(--bg-soft), var(--bg));
+      color: var(--text);
+      font-family: var(--site-font);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px 120px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .headline h1 {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+
+    .headline p {
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.6;
+    }
+
+    .env-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 0.85rem;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 16px 32px rgba(0,0,0,0.35);
+    }
+
+    .card h3 {
+      font-size: 1rem;
+      margin-bottom: 10px;
+    }
+
+    .metric {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .metric span {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .delta {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .delta strong {
+      color: var(--success);
+    }
+
+    .section-title {
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .section-title::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+    }
+
+    .two-col {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+    }
+
+    .bars {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .bar {
+      display: grid;
+      gap: 8px;
+    }
+
+    .bar label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .progress {
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+    }
+
+    .progress span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #5ed6ff);
+    }
+
+    .progress.warn span {
+      background: linear-gradient(90deg, var(--warn), #f59e0b);
+    }
+
+    .progress.danger span {
+      background: linear-gradient(90deg, var(--danger), #ef4444);
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .table th,
+    .table td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .table th {
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 0.75rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .pill.success { color: var(--success); border-color: rgba(61,220,151,0.4); }
+    .pill.warn { color: var(--warn); border-color: rgba(245,194,107,0.4); }
+    .pill.danger { color: var(--danger); border-color: rgba(248,113,113,0.4); }
+
+    .action-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .action {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .action h4 {
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .action p {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-size: 0.8rem;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 0 4px rgba(138,78,255,0.25);
+    }
+
+    .log-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .log-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .log-item span {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .log-item strong {
+      font-size: 0.9rem;
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    @media (max-width: 960px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="headline">
+        <h1>Dashboard Admin</h1>
+        <p>Panel monitoring untuk performa server, audit aktivitas user, dan kontrol sistem. Semua data di bawah bersifat mock dan siap dipindahkan ke server Ubuntu nantinya.</p>
+      </div>
+      <div class="env-pill">
+        <strong>Environment:</strong>
+        <span>Production • Asia/Jakarta</span>
+      </div>
+    </header>
+
+    <section>
+      <h2 class="section-title">Ringkasan Hari Ini</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>CPU Load</h3>
+          <div class="metric">42% <span>avg 15m</span></div>
+          <div class="delta"><strong>↓ 6%</strong> dibanding kemarin</div>
+        </div>
+        <div class="card">
+          <h3>Memori Terpakai</h3>
+          <div class="metric">13.4 GB <span>dari 32 GB</span></div>
+          <div class="delta"><strong>↑ 3%</strong> aktivitas batch</div>
+        </div>
+        <div class="card">
+          <h3>Traffic API</h3>
+          <div class="metric">1.2M <span>request / hari</span></div>
+          <div class="delta"><strong>↑ 9%</strong> peak jam 14:00</div>
+        </div>
+        <div class="card">
+          <h3>Alert Aktif</h3>
+          <div class="metric">3 <span>butuh atensi</span></div>
+          <div class="delta"><strong>2</strong> CPU spike • <strong>1</strong> disk IO</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="two-col">
+        <div>
+          <h2 class="section-title">Performa Server</h2>
+          <div class="bars">
+            <div class="bar">
+              <label><span>CPU Usage</span><strong>42%</strong></label>
+              <div class="progress"><span style="width: 42%"></span></div>
+            </div>
+            <div class="bar">
+              <label><span>Memory Pressure</span><strong>68%</strong></label>
+              <div class="progress warn"><span style="width: 68%"></span></div>
+            </div>
+            <div class="bar">
+              <label><span>Disk Utilization</span><strong>82%</strong></label>
+              <div class="progress danger"><span style="width: 82%"></span></div>
+            </div>
+            <div class="bar">
+              <label><span>Network In</span><strong>620 Mbps</strong></label>
+              <div class="progress"><span style="width: 58%"></span></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h2 class="section-title">Catatan Sistem</h2>
+          <div class="log-list">
+            <div class="log-item">
+              <strong>Backup harian selesai</strong>
+              <span>02:15 WIB • Snapshot storage-01</span>
+            </div>
+            <div class="log-item">
+              <strong>Deploy service auth v2.4</strong>
+              <span>09:40 WIB • 0 downtime</span>
+            </div>
+            <div class="log-item">
+              <strong>Auto scaling aktif</strong>
+              <span>11:10 WIB • 2 instance baru</span>
+            </div>
+            <div class="log-item">
+              <strong>Rotation log mingguan</strong>
+              <span>12:00 WIB • 6 GB dibersihkan</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="section-title">Audit Aktivitas User</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Aksi</th>
+            <th>Lokasi</th>
+            <th>Waktu</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>admin.root</td>
+            <td>Reset API Key</td>
+            <td>Jakarta / VPN</td>
+            <td>13:24</td>
+            <td><span class="pill warn">Need review</span></td>
+          </tr>
+          <tr>
+            <td>auditor.sys</td>
+            <td>Export log auth</td>
+            <td>Bandung</td>
+            <td>12:52</td>
+            <td><span class="pill success">OK</span></td>
+          </tr>
+          <tr>
+            <td>supervisor.ops</td>
+            <td>Update policy MFA</td>
+            <td>Surabaya</td>
+            <td>11:30</td>
+            <td><span class="pill success">OK</span></td>
+          </tr>
+          <tr>
+            <td>user.research</td>
+            <td>Login gagal 5x</td>
+            <td>Makassar</td>
+            <td>10:12</td>
+            <td><span class="pill danger">Flagged</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <div class="two-col">
+        <div>
+          <h2 class="section-title">Kontrol Admin</h2>
+          <div class="action-list">
+            <div class="action">
+              <div>
+                <h4>Rotate Credential</h4>
+                <p>Perbarui token servis dan password critical.</p>
+              </div>
+              <button class="btn">Jalankan</button>
+            </div>
+            <div class="action">
+              <div>
+                <h4>Maintenance Mode</h4>
+                <p>Alihkan traffic ke halaman maintenance.</p>
+              </div>
+              <button class="btn">Aktifkan</button>
+            </div>
+            <div class="action">
+              <div>
+                <h4>Reindex Database</h4>
+                <p>Optimasi performa query &amp; cache layer.</p>
+              </div>
+              <button class="btn">Mulai</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h2 class="section-title">Alert &amp; SLA</h2>
+          <div class="log-list">
+            <div class="log-item">
+              <strong>Latency API &gt; 400ms</strong>
+              <span>Service payment • 3 menit yang lalu</span>
+            </div>
+            <div class="log-item">
+              <strong>Disk node-02 82%</strong>
+              <span>Perlu ekspansi storage sebelum 72 jam</span>
+            </div>
+            <div class="log-item">
+              <strong>Queue email tertunda</strong>
+              <span>12.4k item • Perlu scaling worker</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="section-title">Jadwal Operasional</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Patch Security</h3>
+          <div class="metric">Sabtu, 22:00</div>
+          <div class="delta">Target downtime: 10 menit</div>
+        </div>
+        <div class="card">
+          <h3>Review Audit Q2</h3>
+          <div class="metric">Senin, 09:00</div>
+          <div class="delta">Format laporan PDF/CSV</div>
+        </div>
+        <div class="card">
+          <h3>Capacity Planning</h3>
+          <div class="metric">Rabu, 15:30</div>
+          <div class="delta">Proyeksi growth 30 hari</div>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer-note">Data real-time akan dihubungkan setelah deploy ke Ubuntu server (Grafana/Prometheus/ELK dapat disambungkan di sini).</p>
+  </div>
+</body>
+</html>
