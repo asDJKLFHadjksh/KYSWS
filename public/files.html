@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>File Manager</title>
+  <link rel="stylesheet" href="/css/admin.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+</head>
+<body data-page="files">
+<div class="admin-layout">
+  <aside class="sidebar" data-sidebar></aside>
+  <main class="main-area">
+    <header class="topbar">
+      <div><h1>File Manager</h1><div class="muted">Root aman dibatasi pada /var/www.</div></div>
+      <div class="user-wrap"><span id="user-chip" class="muted">...</span><a href="/logout" class="btn danger">Logout</a></div>
+    </header>
+
+    <section class="panel">
+      <div class="quick-actions">
+        <button class="btn" id="btn-refresh">Refresh</button>
+        <button class="btn" id="btn-upload">Upload</button>
+        <button class="btn" id="btn-mkdir">New Folder</button>
+        <button class="btn" id="btn-new-file">New File</button>
+        <button class="btn" id="btn-rename">Rename</button>
+        <button class="btn danger" id="btn-delete">Delete</button>
+        <button class="btn" id="btn-download">Download</button>
+        <button class="btn primary" id="btn-save">Save Editor</button>
+      </div>
+      <div class="muted" id="current-path" style="margin-top:10px;">/</div>
+    </section>
+
+    <section class="file-layout" style="margin-top:14px;">
+      <article class="panel file-list">
+        <div id="file-rows"></div>
+      </article>
+      <article class="panel">
+        <h3 id="editor-title">Editor</h3>
+        <textarea id="editor" placeholder="Pilih file teks untuk membaca/mengedit."></textarea>
+      </article>
+    </section>
+
+    <input type="file" id="upload-input" multiple hidden>
+  </main>
+</div>
+<div id="loading" class="loading-overlay"><div id="loading-lottie"></div></div>
+<div id="toast" class="toast"></div>
+<script src="/js/admin.js"></script>
+<script src="/js/files.js"></script>
+</body>
+</html>
