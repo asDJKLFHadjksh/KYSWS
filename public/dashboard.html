@@ -1,49 +1,38 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dashboard — KuhyaKuya ST</title>
-<link rel="stylesheet" href="/style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dashboard Overview</title>
+  <link rel="stylesheet" href="/css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 </head>
-<body>
-<div class="bg"></div>
+<body data-page="dashboard">
+  <div class="admin-layout">
+    <aside class="sidebar" data-sidebar></aside>
+    <main class="main-area">
+      <header class="topbar">
+        <div><h1>Dashboard Overview</h1><div class="muted">Ringkasan performa server & aktivitas terbaru.</div></div>
+        <div class="user-wrap"><span id="user-chip" class="muted">...</span><a href="/logout" class="btn danger">Logout</a></div>
+      </header>
 
-<main class="wrap">
-  <section class="card wide">
-    <div class="top">
-      <div>
-        <h1>Dashboard</h1>
-        <p class="sub">Halo, <b id="user">user</b> 👋</p>
-      </div>
-      <form method="GET" action="/logout">
-        <button class="btn danger" type="submit">Logout</button>
-      </form>
-    </div>
+      <section class="grid-4" id="summary-cards"></section>
 
-    <div class="grid">
-      <a class="tile" href="/monitor">
-        <h3>Monitor Server</h3>
-        <p>Lihat CPU/RAM/Disk & uptime.</p>
-      </a>
+      <section class="grid-2">
+        <article class="panel"><h3>CPU & RAM (5 menit)</h3><canvas id="overviewChart" height="140"></canvas></article>
+        <article class="panel"><h3>Quick Actions</h3><div class="quick-actions"><a class="btn" href="/monitor">Monitor Detail</a><a class="btn" href="/files">File Manager</a><a class="btn" href="/settings">Settings</a></div></article>
+      </section>
 
-      <a class="tile" href="/files" target="_blank">
-        <h3>File Manager</h3>
-        <p>Buka File Browser (web local).</p>
-      </a>
-
-      <a class="tile" href="/lab">
-        <h3>Lab Web</h3>
-        <p>Tempat eksperimen halaman.</p>
-      </a>
-    </div>
-  </section>
-</main>
-
-<script>
-fetch("/me").then(r=>r.json()).then(d=>{
-  document.getElementById("user").textContent = d.username || "user";
-});
-</script>
+      <section class="panel" style="margin-top:14px;">
+        <h3>Recent Activity</h3>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Waktu</th><th>Actor</th><th>Action</th><th>Detail</th></tr></thead><tbody id="recent-logs"></tbody></table></div>
+      </section>
+    </main>
+  </div>
+  <div id="loading" class="loading-overlay"><div id="loading-lottie"></div></div>
+  <div id="toast" class="toast"></div>
+  <script src="/js/admin.js"></script>
+  <script src="/js/dashboard.js"></script>
 </body>
 </html>

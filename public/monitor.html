@@ -1,89 +1,40 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Monitor — KuhyaKuya ST</title>
-<link rel="stylesheet" href="/style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Monitor Detail</title>
+  <link rel="stylesheet" href="/css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 </head>
-<body>
-<div class="bg"></div>
+<body data-page="monitor">
+  <div class="admin-layout">
+    <aside class="sidebar" data-sidebar></aside>
+    <main class="main-area">
+      <header class="topbar">
+        <div><h1>Monitor Detail</h1><div class="muted">Grafik realtime setiap 2 detik.</div></div>
+        <div class="user-wrap"><span id="user-chip" class="muted">...</span><a href="/logout" class="btn danger">Logout</a></div>
+      </header>
 
-<main class="wrap">
-  <section class="card wide">
-    <div class="top">
-      <div>
-        <h1>Monitor Server</h1>
-        <p class="sub">Realtime status: CPU / RAM / Disk / Uptime</p>
-      </div>
-      <a class="btn ghost" href="/dashboard">Balik</a>
-    </div>
+      <section class="grid-2-eq">
+        <article class="panel"><h3>CPU Usage %</h3><canvas id="cpuChart" height="120"></canvas></article>
+        <article class="panel"><h3>RAM Usage %</h3><canvas id="ramChart" height="120"></canvas></article>
+      </section>
+      <section class="grid-2-eq" style="margin-top:14px;">
+        <article class="panel"><h3>Disk Usage %</h3><canvas id="diskChart" height="120"></canvas></article>
+        <article class="panel"><h3>Uptime (menit)</h3><canvas id="uptimeChart" height="120"></canvas></article>
+      </section>
 
-    <div class="grid" style="margin-top:16px">
-      <div class="tile" style="cursor:default">
-        <h3>CPU</h3>
-        <p><b id="cpu">-</b></p>
-      </div>
-
-      <div class="tile" style="cursor:default">
-        <h3>RAM</h3>
-        <p><b id="mem">-</b></p>
-        <p class="muted" id="mem2">-</p>
-      </div>
-
-      <div class="tile" style="cursor:default">
-        <h3>Disk /</h3>
-        <p><b id="disk">-</b></p>
-        <p class="muted" id="disk2">-</p>
-      </div>
-
-      <div class="tile" style="cursor:default">
-        <h3>Uptime</h3>
-        <p><b id="uptime">-</b></p>
-      </div>
-
-      <div class="tile" style="cursor:default">
-        <h3>Load Avg</h3>
-        <p><b id="load">-</b></p>
-      </div>
-
-      <div class="tile" style="cursor:default">
-        <h3>Update</h3>
-        <p><b id="ts">-</b></p>
-      </div>
-    </div>
-  </section>
-</main>
-
-<script>
-const fmtBytes = (b)=>{
-  const u=["B","KB","MB","GB","TB"];
-  let i=0; let n=b;
-  while(n>=1024 && i<u.length-1){ n/=1024; i++; }
-  return `${n.toFixed(1)} ${u[i]}`;
-};
-
-async function tick(){
-  const r = await fetch("/api/metrics");
-  const d = await r.json();
-
-  document.getElementById("cpu").textContent = d.cpu.percent;
-  document.getElementById("uptime").textContent = d.uptime;
-
-  document.getElementById("mem").textContent = d.mem.percent;
-  document.getElementById("mem2").textContent = `${fmtBytes(d.mem.used)} / ${fmtBytes(d.mem.total)}`;
-
-  document.getElementById("disk").textContent = d.disk.percent;
-  document.getElementById("disk2").textContent = `${fmtBytes(d.disk.used)} used • ${fmtBytes(d.disk.avail)} free`;
-
-  document.getElementById("load").textContent = `${d.load["1m"]} • ${d.load["5m"]} • ${d.load["15m"]}`;
-
-  const t = new Date(d.ts);
-  document.getElementById("ts").textContent = t.toLocaleTimeString();
-}
-
-tick();
-setInterval(tick, 2000);
-</script>
+      <section class="panel" style="margin-top:14px;">
+        <h3>Aktivitas Server</h3>
+        <div class="table-wrap"><table class="table"><thead><tr><th>Waktu</th><th>Actor</th><th>Action</th><th>Detail</th></tr></thead><tbody id="monitor-logs"></tbody></table></div>
+      </section>
+    </main>
+  </div>
+  <div id="loading" class="loading-overlay"><div id="loading-lottie"></div></div>
+  <div id="toast" class="toast"></div>
+  <script src="/js/admin.js"></script>
+  <script src="/js/monitor.js"></script>
 </body>
 </html>
