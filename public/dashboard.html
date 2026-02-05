@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — KuhyaKuya ST</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="bg"></div>
+
+<main class="wrap">
+  <section class="card wide">
+    <div class="top">
+      <div>
+        <h1>Dashboard</h1>
+        <p class="sub">Halo, <b id="user">user</b> 👋</p>
+      </div>
+      <form method="GET" action="/logout">
+        <button class="btn danger" type="submit">Logout</button>
+      </form>
+    </div>
+
+    <div class="grid">
+      <a class="tile" href="/monitor">
+        <h3>Monitor Server</h3>
+        <p>Lihat CPU/RAM/Disk & uptime.</p>
+      </a>
+
+      <a class="tile" href="/files" target="_blank">
+        <h3>File Manager</h3>
+        <p>Buka File Browser (web local).</p>
+      </a>
+
+      <a class="tile" href="/lab">
+        <h3>Lab Web</h3>
+        <p>Tempat eksperimen halaman.</p>
+      </a>
+    </div>
+  </section>
+</main>
+
+<script>
+fetch("/me").then(r=>r.json()).then(d=>{
+  document.getElementById("user").textContent = d.username || "user";
+});
+</script>
+</body>
+</html>

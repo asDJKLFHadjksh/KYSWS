@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitor — KuhyaKuya ST</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="bg"></div>
+
+<main class="wrap">
+  <section class="card wide">
+    <div class="top">
+      <div>
+        <h1>Monitor Server</h1>
+        <p class="sub">Realtime status: CPU / RAM / Disk / Uptime</p>
+      </div>
+      <a class="btn ghost" href="/dashboard">Balik</a>
+    </div>
+
+    <div class="grid" style="margin-top:16px">
+      <div class="tile" style="cursor:default">
+        <h3>CPU</h3>
+        <p><b id="cpu">-</b></p>
+      </div>
+
+      <div class="tile" style="cursor:default">
+        <h3>RAM</h3>
+        <p><b id="mem">-</b></p>
+        <p class="muted" id="mem2">-</p>
+      </div>
+
+      <div class="tile" style="cursor:default">
+        <h3>Disk /</h3>
+        <p><b id="disk">-</b></p>
+        <p class="muted" id="disk2">-</p>
+      </div>
+
+      <div class="tile" style="cursor:default">
+        <h3>Uptime</h3>
+        <p><b id="uptime">-</b></p>
+      </div>
+
+      <div class="tile" style="cursor:default">
+        <h3>Load Avg</h3>
+        <p><b id="load">-</b></p>
+      </div>
+
+      <div class="tile" style="cursor:default">
+        <h3>Update</h3>
+        <p><b id="ts">-</b></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const fmtBytes = (b)=>{
+  const u=["B","KB","MB","GB","TB"];
+  let i=0; let n=b;
+  while(n>=1024 && i<u.length-1){ n/=1024; i++; }
+  return `${n.toFixed(1)} ${u[i]}`;
+};
+
+async function tick(){
+  const r = await fetch("/api/metrics");
+  const d = await r.json();
+
+  document.getElementById("cpu").textContent = d.cpu.percent;
+  document.getElementById("uptime").textContent = d.uptime;
+
+  document.getElementById("mem").textContent = d.mem.percent;
+  document.getElementById("mem2").textContent = `${fmtBytes(d.mem.used)} / ${fmtBytes(d.mem.total)}`;
+
+  document.getElementById("disk").textContent = d.disk.percent;
+  document.getElementById("disk2").textContent = `${fmtBytes(d.disk.used)} used • ${fmtBytes(d.disk.avail)} free`;
+
+  document.getElementById("load").textContent = `${d.load["1m"]} • ${d.load["5m"]} • ${d.load["15m"]}`;
+
+  const t = new Date(d.ts);
+  document.getElementById("ts").textContent = t.toLocaleTimeString();
+}
+
+tick();
+setInterval(tick, 2000);
+</script>
+</body>
+</html>
