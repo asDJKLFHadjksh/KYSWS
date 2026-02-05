@@ -5,85 +5,119 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Monitor — KuhyaKuya ST</title>
 <link rel="stylesheet" href="/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js" defer></script>
 </head>
 <body>
 <div class="bg"></div>
 
 <main class="wrap">
-  <section class="card wide">
+  <section class="card wide admin-shell">
     <div class="top">
       <div>
-        <h1>Monitor Server</h1>
-        <p class="sub">Realtime status: CPU / RAM / Disk / Uptime</p>
+        <h1>System Monitor</h1>
+        <p class="sub">Monitoring realtime + log aktivitas server</p>
       </div>
       <a class="btn ghost" href="/dashboard">Balik</a>
     </div>
 
-    <div class="grid" style="margin-top:16px">
-      <div class="tile" style="cursor:default">
-        <h3>CPU</h3>
-        <p><b id="cpu">-</b></p>
+    <div class="monitor-loading" id="monitorLoading">
+      <div id="lottieLoading" class="lottie"></div>
+      <img src="/assets/Loading.gif" alt="loading" class="gif-fallback">
+      <p>Memuat data sistem...</p>
+    </div>
+
+    <div id="monitorPanel" class="hidden">
+      <div class="grid stats-grid" style="margin-top:16px">
+        <div class="tile" style="cursor:default"><h3>CPU</h3><p><b id="cpu">-</b></p><canvas id="cpuChart" width="240" height="70"></canvas></div>
+        <div class="tile" style="cursor:default"><h3>RAM</h3><p><b id="mem">-</b></p><p class="muted" id="mem2">-</p><canvas id="memChart" width="240" height="70"></canvas></div>
+        <div class="tile" style="cursor:default"><h3>Disk /</h3><p><b id="disk">-</b></p><p class="muted" id="disk2">-</p></div>
       </div>
 
-      <div class="tile" style="cursor:default">
-        <h3>RAM</h3>
-        <p><b id="mem">-</b></p>
-        <p class="muted" id="mem2">-</p>
-      </div>
+      <div class="grid two-col" style="margin-top:12px">
+        <div class="tile" style="cursor:default">
+          <h3>System</h3>
+          <p><b id="uptime">-</b></p>
+          <p class="muted">Load: <span id="load">-</span></p>
+          <p class="muted">Last update: <span id="ts">-</span></p>
+        </div>
 
-      <div class="tile" style="cursor:default">
-        <h3>Disk /</h3>
-        <p><b id="disk">-</b></p>
-        <p class="muted" id="disk2">-</p>
-      </div>
-
-      <div class="tile" style="cursor:default">
-        <h3>Uptime</h3>
-        <p><b id="uptime">-</b></p>
-      </div>
-
-      <div class="tile" style="cursor:default">
-        <h3>Load Avg</h3>
-        <p><b id="load">-</b></p>
-      </div>
-
-      <div class="tile" style="cursor:default">
-        <h3>Update</h3>
-        <p><b id="ts">-</b></p>
+        <div class="tile" style="cursor:default">
+          <h3>Server Activity Log</h3>
+          <div id="logs" class="log-list"></div>
+        </div>
       </div>
     </div>
   </section>
 </main>
 
 <script>
-const fmtBytes = (b)=>{
-  const u=["B","KB","MB","GB","TB"];
-  let i=0; let n=b;
-  while(n>=1024 && i<u.length-1){ n/=1024; i++; }
-  return `${n.toFixed(1)} ${u[i]}`;
-};
+const history = { cpu: [], mem: [] };
+const fmtBytes = (b)=>{ const u=["B","KB","MB","GB","TB"]; let i=0; let n=b||0; while(n>=1024&&i<u.length-1){n/=1024;i++;} return `${n.toFixed(1)} ${u[i]}`; };
+const id = (x) => document.getElementById(x);
 
-async function tick(){
-  const r = await fetch("/api/metrics");
-  const d = await r.json();
-
-  document.getElementById("cpu").textContent = d.cpu.percent;
-  document.getElementById("uptime").textContent = d.uptime;
-
-  document.getElementById("mem").textContent = d.mem.percent;
-  document.getElementById("mem2").textContent = `${fmtBytes(d.mem.used)} / ${fmtBytes(d.mem.total)}`;
-
-  document.getElementById("disk").textContent = d.disk.percent;
-  document.getElementById("disk2").textContent = `${fmtBytes(d.disk.used)} used • ${fmtBytes(d.disk.avail)} free`;
-
-  document.getElementById("load").textContent = `${d.load["1m"]} • ${d.load["5m"]} • ${d.load["15m"]}`;
-
-  const t = new Date(d.ts);
-  document.getElementById("ts").textContent = t.toLocaleTimeString();
+function draw(canvasId, arr, color) {
+  const c = id(canvasId), ctx = c.getContext("2d");
+  const w = c.width, h = c.height;
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = "rgba(255,255,255,0.1)";
+  ctx.beginPath(); ctx.moveTo(0,h-8); ctx.lineTo(w,h-8); ctx.stroke();
+  if (!arr.length) return;
+  const max = Math.max(100, ...arr);
+  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+  arr.forEach((v,i)=>{ const x=(i/(Math.max(arr.length-1,1)))*(w-8)+4; const y=h-8-((v/max)*(h-16)); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);});
+  ctx.stroke();
 }
 
+function renderLogs(items) {
+  id("logs").innerHTML = items.slice(0, 20).map((l) => {
+    const t = new Date(l.ts).toLocaleTimeString();
+    return `<div class="log-item"><span class="badge ${l.level}">${l.level}</span><b>${l.action}</b><small>${l.detail}</small><time>${t}</time></div>`;
+  }).join("") || '<p class="muted">Belum ada aktivitas.</p>';
+}
+
+async function tick(){
+  const [mRes, lRes] = await Promise.all([fetch("/api/metrics"), fetch("/api/logs")]);
+  const d = await mRes.json();
+  const logs = await lRes.json();
+
+  id("cpu").textContent = d.cpu.percent;
+  id("uptime").textContent = d.uptime;
+  id("mem").textContent = d.mem.percent;
+  id("mem2").textContent = `${fmtBytes(d.mem.used)} / ${fmtBytes(d.mem.total)}`;
+  id("disk").textContent = d.disk.percent;
+  id("disk2").textContent = `${fmtBytes(d.disk.used)} used • ${fmtBytes(d.disk.avail)} free`;
+  id("load").textContent = `${d.load["1m"]} • ${d.load["5m"]} • ${d.load["15m"]}`;
+  id("ts").textContent = new Date(d.ts).toLocaleTimeString();
+
+  history.cpu.push(Number(String(d.cpu.percent).replace("%", "")) || 0);
+  history.mem.push(Number(String(d.mem.percent).replace("%", "")) || 0);
+  if (history.cpu.length > 30) history.cpu.shift();
+  if (history.mem.length > 30) history.mem.shift();
+  draw("cpuChart", history.cpu, "#7a5eff");
+  draw("memChart", history.mem, "#41d6ff");
+
+  renderLogs(logs.logs || []);
+
+  id("monitorLoading").classList.add("hidden");
+  id("monitorPanel").classList.remove("hidden");
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  if (window.lottie) {
+    lottie.loadAnimation({
+      container: id("lottieLoading"),
+      renderer: "svg",
+      loop: true,
+      autoplay: true,
+      path: "/assets/loading.json"
+    });
+    id("lottieLoading").style.display = "block";
+    document.querySelector(".gif-fallback").style.display = "none";
+  }
+});
+
 tick();
-setInterval(tick, 2000);
+setInterval(tick, 2500);
 </script>
 </body>
 </html>

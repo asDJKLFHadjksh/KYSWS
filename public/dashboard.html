@@ -3,47 +3,180 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dashboard — KuhyaKuya ST</title>
+<title>Dashboard Admin — KuhyaKuya ST</title>
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <div class="bg"></div>
 
 <main class="wrap">
-  <section class="card wide">
+  <section class="card wide admin-shell">
     <div class="top">
       <div>
-        <h1>Dashboard</h1>
-        <p class="sub">Halo, <b id="user">user</b> 👋</p>
+        <h1>Dashboard Admin</h1>
+        <p class="sub">Halo, <b id="user">admin</b> · kontrol sistem, file server, dan akun admin</p>
       </div>
-      <form method="GET" action="/logout">
-        <button class="btn danger" type="submit">Logout</button>
-      </form>
+      <div class="row-gap">
+        <a class="btn ghost" href="/monitor">Monitor Detail</a>
+        <a class="btn ghost" href="/files">File Manager</a>
+        <form method="GET" action="/logout"><button class="btn danger" type="submit">Logout</button></form>
+      </div>
     </div>
 
-    <div class="grid">
-      <a class="tile" href="/monitor">
-        <h3>Monitor Server</h3>
-        <p>Lihat CPU/RAM/Disk & uptime.</p>
-      </a>
+    <div class="grid stats-grid">
+      <article class="tile stat">
+        <h3>CPU Usage</h3>
+        <p><b id="cpu">-</b></p>
+        <canvas id="cpuChart" width="240" height="70"></canvas>
+      </article>
+      <article class="tile stat">
+        <h3>RAM Usage</h3>
+        <p><b id="mem">-</b></p>
+        <canvas id="memChart" width="240" height="70"></canvas>
+      </article>
+      <article class="tile stat">
+        <h3>Disk Usage</h3>
+        <p><b id="disk">-</b></p>
+        <p class="muted" id="uptime">Uptime -</p>
+      </article>
+    </div>
 
-      <a class="tile" href="/files" target="_blank">
-        <h3>File Manager</h3>
-        <p>Buka File Browser (web local).</p>
-      </a>
+    <div class="grid two-col" style="margin-top:16px;">
+      <article class="tile">
+        <h3>Aktivitas Server</h3>
+        <p class="muted">Log request, login, dan aksi file manager.</p>
+        <div id="logs" class="log-list"></div>
+      </article>
 
-      <a class="tile" href="/lab">
-        <h3>Lab Web</h3>
-        <p>Tempat eksperimen halaman.</p>
-      </a>
+      <article class="tile">
+        <h3>Admin Settings</h3>
+        <p class="muted">Ganti password, ganti username, tambah admin.</p>
+
+        <form id="changePasswordForm" class="mini-form">
+          <label>Password lama</label>
+          <input type="password" name="currentPassword" required>
+          <label>Password baru (min 8)</label>
+          <input type="password" name="newPassword" required minlength="8">
+          <button class="btn" type="submit">Ganti Password</button>
+        </form>
+
+        <form id="changeUsernameForm" class="mini-form">
+          <label>Username baru</label>
+          <input type="text" name="newUsername" required>
+          <label>Password konfirmasi</label>
+          <input type="password" name="password" required>
+          <button class="btn" type="submit">Ganti Username</button>
+        </form>
+
+        <form id="addUserForm" class="mini-form">
+          <label>Username admin baru</label>
+          <input type="text" name="username" required>
+          <label>Password admin baru</label>
+          <input type="password" name="password" required minlength="8">
+          <button class="btn" type="submit">Tambah Admin</button>
+        </form>
+
+        <div class="muted" id="settingStatus">-</div>
+        <ul id="adminUsers" class="users"></ul>
+      </article>
     </div>
   </section>
 </main>
 
 <script>
-fetch("/me").then(r=>r.json()).then(d=>{
-  document.getElementById("user").textContent = d.username || "user";
-});
+const history = { cpu: [], mem: [] };
+
+const id = (s) => document.getElementById(s);
+const drawLine = (canvasId, values, color) => {
+  const c = id(canvasId);
+  const ctx = c.getContext("2d");
+  const w = c.width;
+  const h = c.height;
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = "rgba(255,255,255,0.09)";
+  ctx.beginPath(); ctx.moveTo(0,h-8); ctx.lineTo(w,h-8); ctx.stroke();
+
+  if (!values.length) return;
+  const max = Math.max(100, ...values);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  values.forEach((v, i) => {
+    const x = (i/(Math.max(values.length-1,1))) * (w-10) + 5;
+    const y = h - 8 - ((v/max) * (h-16));
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+};
+
+async function updateMetrics() {
+  const r = await fetch("/api/metrics");
+  const d = await r.json();
+  id("cpu").textContent = d.cpu.percent;
+  id("mem").textContent = d.mem.percent;
+  id("disk").textContent = d.disk.percent;
+  id("uptime").textContent = `Uptime ${d.uptime}`;
+
+  const cpuVal = Number(String(d.cpu.percent).replace("%", "")) || 0;
+  const memVal = Number(String(d.mem.percent).replace("%", "")) || 0;
+  history.cpu.push(cpuVal); history.mem.push(memVal);
+  if (history.cpu.length > 24) history.cpu.shift();
+  if (history.mem.length > 24) history.mem.shift();
+
+  drawLine("cpuChart", history.cpu, "#6f53ff");
+  drawLine("memChart", history.mem, "#68d0ff");
+}
+
+function renderLogs(items) {
+  id("logs").innerHTML = items.slice(0, 16).map((l) => {
+    const t = new Date(l.ts).toLocaleTimeString();
+    return `<div class="log-item"><span class="badge ${l.level}">${l.level}</span> <b>${l.action}</b><small>${l.detail}</small><time>${t}</time></div>`;
+  }).join("") || '<p class="muted">Belum ada log.</p>';
+}
+
+async function updateLogs() {
+  const r = await fetch("/api/logs");
+  const d = await r.json();
+  renderLogs(d.logs || []);
+}
+
+async function loadUsers() {
+  const r = await fetch("/api/admin/users");
+  const d = await r.json();
+  id("adminUsers").innerHTML = (d.users || []).map(u => `<li>${u.username}</li>`).join("");
+}
+
+function bindForm(formId, api) {
+  id(formId).addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const body = Object.fromEntries(fd.entries());
+    const res = await fetch(api, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const d = await res.json();
+    id("settingStatus").textContent = d.error || "Berhasil disimpan.";
+    if (!d.error) {
+      e.currentTarget.reset();
+      fetch("/me").then(r=>r.json()).then(me=>{ id("user").textContent = me.username || "admin"; });
+      loadUsers();
+      updateLogs();
+    }
+  });
+}
+
+fetch("/me").then(r=>r.json()).then(d=>{ id("user").textContent = d.username || "admin"; });
+bindForm("changePasswordForm", "/api/admin/change-password");
+bindForm("changeUsernameForm", "/api/admin/change-username");
+bindForm("addUserForm", "/api/admin/users");
+
+updateMetrics();
+updateLogs();
+loadUsers();
+setInterval(updateMetrics, 3000);
+setInterval(updateLogs, 4000);
 </script>
 </body>
 </html>
